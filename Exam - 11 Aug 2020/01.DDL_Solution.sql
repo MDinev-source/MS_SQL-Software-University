@@ -145,56 +145,57 @@ WHERE AVG BETWEEN 5.0 AND 8.0
 ORDER BY DistributorName, IngredientName,ProductName
 
 --10. Country Representative
-select rankQuery.Name, rankQuery.DistributorName
-from (
-select c.Name, d.Name as DistributorName,
-       dense_rank() over (partition by c.Name order by count(i.Id) desc) as rank
-from Countries as c
-      join  Distributors D on c.Id = D.CountryId
-     left join Ingredients I on D.Id = I.DistributorId
-group by  c.Name, d.Name
-) as rankQuery
-where rankQuery.rank=1
- ORDER BY rankQuery.Name, rankQuery.DistributorName
+SELECT rankQuery.Name, rankQuery.DistributorName
+FROM (
+	  SELECT c.Name, d.Name as DistributorName,
+      DENSE_RANK() OVER (PARTITION BY c.Name ORDER BY COUNT(i.Id) DESC) AS Rank
+FROM Countries AS c
+      JOIN  Distributors D ON c.Id = D.CountryId
+      LEFT JOIN Ingredients I ON D.Id = I.DistributorId
+GROUP BY  c.Name, d.Name
+) AS rankQuery
+WHERE rankQuery.rank=1
+ORDER BY rankQuery.Name, rankQuery.DistributorName
 
 
 
  GO
 
-CREATE VIEW v_UserWithCountries as
+CREATE VIEW v_UserWithCountries AS
 (
-select CONCAT(C.FirstName, ' ', c.LastName) as CustomerName,
-             C.Age as Age,
-       C.Gender as Gender,
-       C2.Name as CountryName
-from Customers as C
-         join Countries C2 on C2.Id = C.CountryId)
+SELECT CONCAT(C.FirstName, ' ', c.LastName) AS CustomerName,
+             C.Age AS Age,
+			 C.Gender AS Gender,
+			 C2.Name AS CountryName
+FROM Customers AS C
+JOIN Countries C2 ON C2.Id = C.CountryId)
 GO
 
 SELECT TOP 5 *
-  FROM v_UserWithCountries
- ORDER BY Age
+FROM v_UserWithCountries
+ORDER BY Age
  
 
  --12. Delete Products
 
 GO
-create trigger dbo.ProductsToDelete
-    on Products
-    instead of DELETE
-    as
-begin
-    declare
-        @deletedProductId int = (SELECT p.Id
-                                 from Products as p
-                                          join deleted as d on d.Id = p.Id)
-    delete
-    from ProductsIngredients
-    where ProductId = @deletedProductId
-    delete
-    from Feedbacks
-    where ProductId = @deletedProductId
-    delete
-    from Products
-    where Id = @deletedProductId
-end
+CREATE TRIGGER dbo.ProductsToDelete
+    ON Products
+    INSTEAD OF DELETE
+    AS
+BEGIN
+    DECLARE
+        @deletedProductId INT = (SELECT p.Id
+                                 FROM Products AS p
+                                 JOIN deleted AS d ON d.Id = p.Id)
+    DELETE
+    FROM ProductsIngredients
+    WHERE ProductId = @deletedProductId
+    DELETE
+    FROM Feedbacks
+    WHERE ProductId = @deletedProductId
+    DELETE
+    FROM Products
+    WHERE Id = @deletedProductId
+END
+
